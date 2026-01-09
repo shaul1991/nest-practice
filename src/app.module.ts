@@ -5,4 +5,4 @@ import { PostModule } from './post/post.module';
 @Module({
   imports: [BoardModule, PostModule],
 })
-export class AppModule { }
+export class AppModule {}
