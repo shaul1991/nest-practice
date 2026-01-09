@@ -17,17 +17,17 @@
  * - createdAt, updatedAt 등은 서버에서 자동 설정되므로 포함하지 않습니다
  */
 export class CreateBoardDto {
-    /**
-     * 게시판 제목
-     * - 필수 필드
-     * - 클라이언트가 반드시 제공해야 하는 값
-     */
-    title: string;
+  /**
+   * 게시판 제목
+   * - 필수 필드
+   * - 클라이언트가 반드시 제공해야 하는 값
+   */
+  title: string;
 
-    /**
-     * 게시판 설명
-     * - 필수 필드
-     * - 게시판의 목적이나 설명
-     */
-    description: string;
+  /**
+   * 게시판 설명
+   * - 필수 필드
+   * - 게시판의 목적이나 설명
+   */
+  description: string;
 }

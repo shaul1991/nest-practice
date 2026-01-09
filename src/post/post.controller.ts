@@ -31,8 +31,8 @@ export class PostController {
    * @returns 생성된 게시글
    */
   @Post()
-  create(@Body() createPostDto: CreatePostDto) {
-    return this.postService.create(createPostDto);
+  async create(@Body() createPostDto: CreatePostDto) {
+    return await this.postService.create(createPostDto);
   }
 
   /**
@@ -52,10 +52,10 @@ export class PostController {
    * - GET /posts?boardId=1 → 게시판 1의 게시글만 조회
    */
   @Get()
-  findAll(@Query('boardId') boardId?: string) {
+  async findAll(@Query('boardId') boardId?: string) {
     // 쿼리 파라미터가 있으면 숫자로 변환, 없으면 undefined
     const boardIdNumber = boardId ? +boardId : undefined;
-    return this.postService.findAll(boardIdNumber);
+    return await this.postService.findAll(boardIdNumber);
   }
 
   /**
@@ -66,8 +66,8 @@ export class PostController {
    * @returns 조회된 게시글
    */
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.postService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    return await this.postService.findOne(+id);
   }
 
   /**
@@ -79,8 +79,8 @@ export class PostController {
    * @returns 수정된 게시글
    */
   @Put(':id')
-  update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
-    return this.postService.update(+id, updatePostDto);
+  async update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
+    return await this.postService.update(+id, updatePostDto);
   }
 
   /**
@@ -90,7 +90,7 @@ export class PostController {
    * @param id - URL 파라미터에서 추출된 게시글 ID
    */
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.postService.remove(+id);
+  async remove(@Param('id') id: string) {
+    return await this.postService.remove(+id);
   }
 }

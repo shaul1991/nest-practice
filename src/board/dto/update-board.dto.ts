@@ -16,17 +16,17 @@
  * - 둘 다 변경: { title: "새 제목", description: "새 설명" }
  */
 export class UpdateBoardDto {
-    /**
-     * 게시판 제목
-     * - 선택적 필드 (optional)
-     * - 제공된 경우에만 제목이 업데이트됩니다
-     */
-    title?: string;
+  /**
+   * 게시판 제목
+   * - 선택적 필드 (optional)
+   * - 제공된 경우에만 제목이 업데이트됩니다
+   */
+  title?: string;
 
-    /**
-     * 게시판 설명
-     * - 선택적 필드 (optional)
-     * - 제공된 경우에만 설명이 업데이트됩니다
-     */
-    description?: string;
+  /**
+   * 게시판 설명
+   * - 선택적 필드 (optional)
+   * - 제공된 경우에만 설명이 업데이트됩니다
+   */
+  description?: string;
 }

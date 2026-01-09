@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { BoardService } from './board.service';
 import { BoardController } from './board.controller';
+import { Board } from './entities/board.entity';
+import { Post } from '../post/entities/post.entity';
 
 /**
  * Module: BoardModule (게시판 모듈)
@@ -22,6 +25,16 @@ import { BoardController } from './board.controller';
  * 5. 의존성 관리: 모듈 간 의존성을 명확히 합니다
  */
 @Module({
+    /**
+     * imports: 이 모듈이 의존하는 다른 모듈 목록
+     *
+     * TypeOrmModule.forFeature([Board]):
+     * - Board 엔티티에 대한 Repository를 이 모듈에서 사용할 수 있게 합니다
+     * - BoardService에서 @InjectRepository(Board)로 주입받을 수 있습니다
+     * - forFeature()는 특정 엔티티에 대한 Repository를 등록합니다
+     */
+    imports: [TypeOrmModule.forFeature([Board, Post])],
+
     /**
      * controllers: 이 모듈에 속한 Controller 목록
      *

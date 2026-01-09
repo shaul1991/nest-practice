@@ -3,6 +3,8 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Post } from './entities/post.entity';
@@ -13,54 +15,49 @@ import { BoardService } from '../board/board.service';
  *
  * PostService는 게시글 관련 비즈니스 로직을 처리합니다.
  * - BoardService에 의존합니다 (게시판 존재 여부 확인)
+ * - TypeORM Repository를 사용하여 데이터베이스 작업을 수행합니다
  * - 게시글의 생성, 조회, 수정, 삭제를 담당합니다
  *
+ * Repository 패턴:
+ * - TypeORM의 Repository를 사용하여 데이터베이스 작업을 수행합니다
+ * - 데이터 접근 로직을 캡슐화합니다
+ * - 테스트 시 Mock Repository를 쉽게 주입할 수 있습니다
+ *
  * 의존성 주입 (Dependency Injection):
- * - BoardService를 생성자에서 주입받습니다
- * - PostModule에서 BoardModule을 import해야 합니다
- * - BoardModule에서 BoardService를 export해야 합니다
+ * - BoardService와 Post Repository를 생성자에서 주입받습니다
+ * - PostModule에서 BoardModule과 TypeOrmModule을 import해야 합니다
  */
 @Injectable()
 export class PostService {
   /**
-   * 게시글 데이터 저장소 (메모리 기반)
+   * TypeORM Repository
+   * - @InjectRepository(): TypeORM Repository를 주입받습니다
+   * - Repository<Post>: Post 엔티티에 대한 Repository 타입
+   * - 데이터베이스 CRUD 작업을 수행합니다
    */
-  private posts: Post[] = [];
-
-  /**
-   * 다음 게시글 ID (자동 증가)
-   */
-  private nextId = 1;
-
-  /**
-   * 의존성 주입: BoardService
-   *
-   * @param boardService - BoardService 인스턴스 (NestJS가 자동 주입)
-   *
-   * 왜 BoardService가 필요한가?
-   * - 게시글 생성 시 boardId의 유효성을 검증해야 합니다
-   * - 존재하지 않는 게시판에 게시글을 생성하는 것을 방지합니다
-   * - 참조 무결성(Referential Integrity)을 보장합니다
-   */
-  constructor(private readonly boardService: BoardService) {}
+  constructor(
+    @InjectRepository(Post)
+    private readonly postRepository: Repository<Post>,
+    private readonly boardService: BoardService,
+  ) { }
 
   /**
    * 게시글 생성
    *
    * @param createPostDto - 생성할 게시글 정보
    * @returns 생성된 게시글 엔티티
-   * @throws BadRequestException - boardId가 유효하지 않은 경우
+   * @throws BadRequestException - board_id가 유효하지 않은 경우
    *
    * 비즈니스 로직:
-   * 1. boardId 유효성 검사 (게시판이 존재하는지 확인)
+   * 1. board_id 유효성 검사 (게시판이 존재하는지 확인)
    * 2. 게시글 엔티티 생성
-   * 3. 메모리 저장소에 추가
+   * 3. 데이터베이스에 저장
    */
-  create(createPostDto: CreatePostDto): Post {
-    // boardId 유효성 검사: 게시판이 존재하는지 확인
+  async create(createPostDto: CreatePostDto): Promise<Post> {
+    // board_id 유효성 검사: 게시판이 존재하는지 확인
     try {
-      this.boardService.findOne(createPostDto.boardId);
-    } catch (error) {
+      await this.boardService.findOne(createPostDto.boardId);
+    } catch {
       // 게시판이 없으면 BadRequestException 발생
       // 400 Bad Request: 클라이언트가 잘못된 요청을 보낸 경우
       throw new BadRequestException(
@@ -68,40 +65,41 @@ export class PostService {
       );
     }
 
-    const now = new Date();
-    const post = new Post(
-      this.nextId++,
-      createPostDto.boardId,
-      createPostDto.title,
-      createPostDto.content,
-      now,
-      now,
-      null,
-    );
-    this.posts.push(post);
-    return post;
+    // 새로운 게시글 엔티티 생성
+    const post = this.postRepository.create({
+      board_id: createPostDto.boardId,
+      title: createPostDto.title,
+      content: createPostDto.content,
+    });
+
+    // 데이터베이스에 저장
+    return await this.postRepository.save(post);
   }
 
   /**
    * 게시글 목록 조회
    *
-   * @param boardId - 선택적 필터: 특정 게시판의 게시글만 조회
+   * @param board_id - 선택적 필터: 특정 게시판의 게시글만 조회
    * @returns 삭제되지 않은 게시글 배열
    *
+   * TypeORM의 find() 메서드:
+   * - where 조건으로 필터링할 수 있습니다
+   * - @DeleteDateColumn()이 있으면 자동으로 deletedAt이 null인 레코드만 조회합니다
+   *
    * 필터링 옵션:
-   * - boardId가 제공되면: 해당 게시판의 게시글만 반환
-   * - boardId가 없으면: 모든 게시글 반환
+   * - board_id가 제공되면: 해당 게시판의 게시글만 반환
+   * - board_id가 없으면: 모든 게시글 반환
    * - 삭제된 게시글은 항상 제외됩니다
    */
-  findAll(boardId?: number): Post[] {
-    if (boardId !== undefined) {
+  async findAll(board_id?: number): Promise<Post[]> {
+    if (board_id !== undefined) {
       // 특정 게시판의 게시글만 필터링
-      return this.posts.filter(
-        (post) => post.boardId === boardId && post.deletedAt === null,
-      );
+      return await this.postRepository.find({
+        where: { board_id },
+      });
     }
     // 모든 게시글 반환 (삭제되지 않은 것만)
-    return this.posts.filter((post) => post.deletedAt === null);
+    return await this.postRepository.find();
   }
 
   /**
@@ -110,12 +108,20 @@ export class PostService {
    * @param id - 조회할 게시글 ID
    * @returns 조회된 게시글 엔티티
    * @throws NotFoundException - 게시글이 없거나 삭제된 경우
+   *
+   * TypeORM의 findOne() 메서드:
+   * - where 조건으로 ID를 지정합니다
+   * - @DeleteDateColumn()이 있으면 자동으로 deletedAt이 null인 레코드만 조회합니다
    */
-  findOne(id: number): Post {
-    const post = this.posts.find((p) => p.id === id && p.deletedAt === null);
+  async findOne(id: number): Promise<Post> {
+    const post = await this.postRepository.findOne({
+      where: { id },
+    });
+
     if (!post) {
       throw new NotFoundException(`Post with ID ${id} not found`);
     }
+
     return post;
   }
 
@@ -128,30 +134,37 @@ export class PostService {
    *
    * 부분 업데이트:
    * - 제공된 필드만 업데이트합니다
-   * - updatedAt은 항상 현재 시각으로 갱신됩니다
+   * - @UpdateDateColumn()이 자동으로 updatedAt을 갱신합니다
+   *
+   * TypeORM의 save() 메서드:
+   * - 엔티티에 id가 있으면 업데이트, 없으면 생성합니다
+   * - 부분 업데이트를 위해 Object.assign()을 사용합니다
    */
-  update(id: number, updatePostDto: UpdatePostDto): Post {
-    const post = this.findOne(id);
-    const now = new Date();
+  async update(id: number, updatePostDto: UpdatePostDto): Promise<Post> {
+    const post = await this.findOne(id);
 
-    if (updatePostDto.title !== undefined && updatePostDto.title !== null) {
-      post.title = updatePostDto.title;
-    }
-    if (updatePostDto.content !== undefined && updatePostDto.content !== null) {
-      post.content = updatePostDto.content;
-    }
-    post.updatedAt = now;
+    // 부분 업데이트: 제공된 필드만 업데이트
+    Object.assign(post, updatePostDto);
 
-    return post;
+    // 데이터베이스에 저장 (업데이트)
+    // @UpdateDateColumn()이 자동으로 updatedAt을 갱신합니다
+    return await this.postRepository.save(post);
   }
 
   /**
    * 게시글 삭제 (Soft Delete)
    *
    * @param id - 삭제할 게시글 ID
+   *
+   * TypeORM의 softRemove() 메서드:
+   * - @DeleteDateColumn()이 있는 엔티티의 Soft Delete를 수행합니다
+   * - deletedAt에 현재 시각을 자동으로 설정합니다
+   * - 실제로 데이터베이스에서 삭제되지 않고 표시만 됩니다
    */
-  remove(id: number): void {
-    const post = this.findOne(id);
-    post.deletedAt = new Date();
+  async remove(id: number): Promise<void> {
+    const post = await this.findOne(id);
+
+    // Soft Delete: deletedAt에 현재 시각 설정
+    await this.postRepository.softRemove(post);
   }
 }

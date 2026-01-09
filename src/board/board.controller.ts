@@ -73,8 +73,8 @@ export class BoardController {
    * 5. 결과를 JSON으로 변환하여 응답
    */
   @Post()
-  create(@Body() createBoardDto: CreateBoardDto) {
-    return this.boardService.create(createBoardDto);
+  async create(@Body() createBoardDto: CreateBoardDto) {
+    return await this.boardService.create(createBoardDto);
   }
 
   /**
@@ -93,8 +93,8 @@ export class BoardController {
    * - 부수 효과(side effect)가 없어야 합니다 (멱등성)
    */
   @Get()
-  findAll() {
-    return this.boardService.findAll();
+  async findAll() {
+    return await this.boardService.findAll();
   }
 
   /**
@@ -118,9 +118,9 @@ export class BoardController {
    * - 그렇지 않으면 '/boards' 요청도 ':id'로 매칭될 수 있습니다
    */
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     // 문자열을 숫자로 변환 (+id는 Number(id)와 동일)
-    return this.boardService.findOne(+id);
+    return await this.boardService.findOne(+id);
   }
 
   /**
@@ -142,8 +142,11 @@ export class BoardController {
    * - 여기서는 PUT을 부분 업데이트로 사용 (실무에서도 흔함)
    */
   @Put(':id')
-  update(@Param('id') id: string, @Body() updateBoardDto: UpdateBoardDto) {
-    return this.boardService.update(+id, updateBoardDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateBoardDto: UpdateBoardDto,
+  ) {
+    return await this.boardService.update(+id, updateBoardDto);
   }
 
   /**
@@ -164,7 +167,33 @@ export class BoardController {
    * - 404 Not Found: 리소스가 없는 경우 (Service에서 NotFoundException 발생 시)
    */
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.boardService.remove(+id);
+  async remove(@Param('id') id: string) {
+    return await this.boardService.remove(+id);
+  }
+
+  /**
+   * 특정 게시판의 게시물들 조회
+   * HTTP Method: GET
+   * Route: GET /boards/:id/posts
+   *
+   * @param id - URL 파라미터에서 추출된 게시판 ID (문자열)
+   * @returns 조회된 게시판 (JSON으로 자동 변환)
+   *
+   * @Get(':id') 데코레이터:
+   * - 경로 파라미터 ':id'를 정의합니다
+   * - 예: GET /boards/1 → id = "1"
+   *
+   * @Param('id') 데코레이터:
+   * - URL 파라미터에서 'id' 값을 추출합니다
+   * - 문자열로 추출되므로 숫자로 변환(+id)이 필요합니다
+   *
+   * 라우트 순서 주의:
+   * - @Get(':id')는 @Get()보다 뒤에 정의해야 합니다
+   * - 그렇지 않으면 '/boards' 요청도 ':id'로 매칭될 수 있습니다
+   */
+  @Get(':id/posts')
+  async searchPostsByBoard(@Param('id') id: string) {
+    // 문자열을 숫자로 변환 (+id는 Number(id)와 동일)
+    return await this.boardService.searchPostsByBoard(+id);
   }
 }
