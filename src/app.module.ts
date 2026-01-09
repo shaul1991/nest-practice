@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager';
 import { BoardModule } from './board/board.module';
 import { PostModule } from './post/post.module';
 import { typeOrmConfig } from './config/typeorm.config';
+import { redisConfig } from './config/redis.config';
 
 /**
  * Module: AppModule (애플리케이션 루트 모듈)
@@ -31,6 +33,13 @@ import { typeOrmConfig } from './config/typeorm.config';
      * - 설정은 config/typeorm.config.ts에서 관리됩니다
      */
     TypeOrmModule.forRootAsync(typeOrmConfig),
+
+    /**
+     * CacheModule: Redis 캐시 연동
+     * - Redis를 캐시 저장소로 사용합니다
+     * - 설정은 config/redis.config.ts에서 관리됩니다
+     */
+    CacheModule.registerAsync(redisConfig),
 
     // 기능 모듈들
     BoardModule,
