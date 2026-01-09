@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { BoardModule } from './board/board.module';
 import { PostModule } from './post/post.module';
-import { Board } from './board/entities/board.entity';
-import { Post } from './post/entities/post.entity';
+import { typeOrmConfig } from './config/typeorm.config';
 
 /**
  * Module: AppModule (애플리케이션 루트 모듈)
@@ -29,28 +28,9 @@ import { Post } from './post/entities/post.entity';
      * TypeOrmModule: TypeORM 데이터베이스 연동
      * - PostgreSQL 데이터베이스와 연결합니다
      * - Entity를 등록하여 테이블을 자동 생성합니다
-     *
-     * forRootAsync를 사용하는 이유:
-     * - ConfigService를 사용하여 환경 변수를 읽기 위해 비동기 설정이 필요합니다
-     * - 데이터베이스 연결 정보를 .env 파일에서 가져옵니다
+     * - 설정은 config/typeorm.config.ts에서 관리됩니다
      */
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres', // 데이터베이스 타입
-        host: configService.get<string>('DB_HOST', 'localhost'),
-        port: configService.get<number>('DB_PORT', 5432),
-        username: configService.get<string>('DB_USERNAME', 'postgres'),
-        password: configService.get<string>('DB_PASSWORD', 'postgres'),
-        database: configService.get<string>('DB_DATABASE', 'nest_practice'),
-        entities: [Board, Post], // 엔티티 등록
-        synchronize:
-          configService.get<string>('TYPEORM_SYNCHRONIZE', 'false') === 'true',
-        logging:
-          configService.get<string>('TYPEORM_LOGGING', 'false') === 'true',
-      }),
-      inject: [ConfigService],
-    }),
+    TypeOrmModule.forRootAsync(typeOrmConfig),
 
     // 기능 모듈들
     BoardModule,
