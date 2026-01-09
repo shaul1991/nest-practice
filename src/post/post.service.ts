@@ -1,14 +1,14 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Post } from './entities/post.entity';
 import { BoardService } from '../board/board.service';
+import {
+  NotFoundException,
+  BadRequestException,
+} from '../common/exceptions';
 
 /**
  * Service: PostService (게시글 비즈니스 로직 서비스)
@@ -62,6 +62,7 @@ export class PostService {
       // 400 Bad Request: 클라이언트가 잘못된 요청을 보낸 경우
       throw new BadRequestException(
         `Board with ID ${createPostDto.boardId} not found`,
+        'BOARD_NOT_FOUND',
       );
     }
 
@@ -119,7 +120,10 @@ export class PostService {
     });
 
     if (!post) {
-      throw new NotFoundException(`Post with ID ${id} not found`);
+      throw new NotFoundException(
+        `Post with ID ${id} not found`,
+        'POST_NOT_FOUND',
+      );
     }
 
     return post;

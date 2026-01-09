@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateBoardDto } from './dto/create-board.dto';
 import { UpdateBoardDto } from './dto/update-board.dto';
 import { Board } from './entities/board.entity';
 import { Post } from '../post/entities/post.entity';
+import { NotFoundException } from '../common/exceptions';
 
 /**
  * Service: BoardService (게시판 비즈니스 로직 서비스)
@@ -107,7 +108,10 @@ export class BoardService {
     });
 
     if (!board) {
-      throw new NotFoundException(`Board with ID ${id} not found`);
+      throw new NotFoundException(
+        `Board with ID ${id} not found`,
+        'BOARD_NOT_FOUND',
+      );
     }
 
     return board;
